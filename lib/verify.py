@@ -27,7 +27,7 @@ TRUSTED_SIGNATURES = {"27DEB15644C6B3CF3BD7D291300F846BA25BAE09": "Linux Mint",
                       "DF9B9C49EAA9298432589D76DA87E80D6294BE9B": "Debian",
                       "F41D30342F3546695F65C66942468F4009EA8AC3": "Debian"}
 
-MINT_MIRROR = "https://mirrors.kernel.org/linuxmint"
+MINT_MIRROR = "https://mirrors.edge.kernel.org/linuxmint"
 
 CACHE_DIR = os.path.expanduser("~/.cache/mintstick")
 subprocess.call(["mkdir", "-p", CACHE_DIR])
@@ -133,6 +133,8 @@ class App():
             if self.filename.startswith("linuxmint-"):
                 if self.filename.endswith("-beta.iso"):
                     sums = f"{MINT_MIRROR}/testing/sha256sum.txt"
+                elif "-hwe" in self.filename:
+                    sums = f"{MINT_MIRROR}/hwe/sha256sum.txt"
                 elif self.filename.endswith(".iso"):
                     # extract version number
                     version = self.filename.split("-")[1]
@@ -223,6 +225,7 @@ class App():
             self.show_result("dialog-error", _("Checksum mismatch"),
                     summary=_("Download the ISO image again. Its checksum does not match."))
 
+    @async_function
     def verify_url(self, button):
         # Download files
         timeout = (3.05, 27)
@@ -246,6 +249,7 @@ class App():
             return
         self.verify()
 
+    @async_function
     def verify_files(self, button):
         # Copy files
         try:
@@ -285,7 +289,7 @@ class App():
             fingerprint = verified.fingerprint
             details.append(_("Signed by: %s") % fingerprint)
 
-            for keyserver in ['hkp://keyserver.ubuntu.com', 'hkp://keys.openpgp.org']:
+            for keyserver in ['hkps://keyserver.ubuntu.com', 'hkps://keys.openpgp.org', 'hkp://keyserver.ubuntu.com', 'hkp://keys.openpgp.org']:
                 if not verified.valid:
                     # The key isn't in the keyring, download it from the keyserver
                     # Note: keyserver.ubuntu.com is fast but unreliable, start with that one
@@ -343,6 +347,7 @@ class App():
                         return (False, _("The SHA256 sum of the ISO image is incorrect."))
         return (False, _("The SHA256 sums file does not contain sums for this ISO image."))
 
+    @idle_function
     def show_result(self, icon_name, text, summary=None, details=None):
         self.builder.get_object("image_result").set_from_icon_name(icon_name, 64)
         self.builder.get_object("label_result").set_text(text)
@@ -355,6 +360,7 @@ class App():
         self.builder.get_object("label_result_summary").select_region(0, 0)
         self.builder.get_object("back_button").grab_focus()
 
+    @idle_function
     def dialog(self, text):
         dialog = Gtk.MessageDialog(parent=self.window,
             modal=True,
